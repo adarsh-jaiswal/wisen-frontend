@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <style>
+        .grid-item {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            margin-left:40%;
+            -webkit-animation: spin 2s linear infinite;
+            /* Safari */
+            animation: spin 2s linear infinite;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <title>Wisen</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    
+</head>
+
+<body>
+
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-1 grid-item">Movie Title</div>
+            <div class="col-1 grid-item">Director Name</div>
+            <div class="col-1 grid-item">actor_1_name</div>
+
+            <div class="col-1 grid-item">actor_2_name</div>
+            <div class="col-1 grid-item">Genres
+                <Select id="genres" onchange="genereSelect(this.value)">
+                    <option value="" selected disabled hidden>Choose here</option>
+                </Select>
+            </div>
+            <div class="col-1 grid-item">Language
+                <Select id="language" onchange="languageSelect(this.value)">
+                    <option value="" selected disabled hidden>Choose here</option>
+                </Select>
+            </div>
+
+            <div class="col-1 grid-item">country
+                    <Select id="country" onchange="countrySelect(this.value)">
+                            <option value="" selected disabled hidden>Choose here</option>
+                    </Select>
+            </div>
+            <div class="col-1 grid-item">content_rating</div>
+            <div class="col-1 grid-item">budget</div>
+
+            <div class="col-1 grid-item">title_year</div>
+            <div class="col-1 grid-item">plot_keywords</div>
+            <div class="col-1 grid-item">movie_imdb_link</div>
+        </div>
+        <div class="loader" id ="loader"></div>
+    </div>
+    <div class="container-fluid" id="ids">
+
+            
+    </div>
+        
+</body>
+<script>
+
+var URL = "http://starlord.hackerearth.com/movieslisting";
+loadJSON(URL, success, error);
+var resultArr = [];
+var genresSet = new Set();
+var languageSet = new Set();
+var countrySet = new Set();
+var titleYearSet = new Set();
+
+function success(arg) {
+    resultArr = arg;
+    buildHtml();
+}
+
+function error(arg) {
+    console.log(arg);
+}
+function loadJSON(URL, success, error) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                if (success)
+                    success(JSON.parse(xhr.responseText));
+            } else {
+                if (error)
+                    error(xhr);
+            }
+        }
+    };
+    xhr.open("GET", URL, true);
+    xhr.send();
+}
+
+
+function buildHtml() {
+    blockUi();
+    register(resultArr);
+    let genereSelect = document.getElementById('genres');
+    let languageSelect = document.getElementById('language');
+    let countrySelect = document.getElementById('country');
+    for (let item of genresSet) {
+        let opt = document.createElement('option');
+        opt.value = item;
+        opt.innerHTML = item;
+        genereSelect.appendChild(opt);
+    }
+
+    for (let item of languageSet) {
+        if (item == "")
+            continue;
+        let opt = document.createElement('option');
+        opt.value = item;
+        opt.innerHTML = item;
+        languageSelect.appendChild(opt);
+    }
+    for (let item of countrySet) {
+        if (item == "")
+            continue;
+        let opt = document.createElement('option');
+        opt.value = item;
+        opt.innerHTML = item;
+        countrySelect.appendChild(opt);
+    }
+
+    showUi();
+}
+
+function genereSelect(value) {
+    blockUi();
+    if (value == "") return;
+    let genresFilter = _.map(resultArr, function (o) {
+        if (containsGenre(o.genres, value)) return o;
+    });
+    genresFilter = _.without(genresFilter, undefined)
+
+    register(genresFilter);
+    showUi();
+}
+function languageSelect(value) {
+    blockUi();
+    if (value == "") return;
+    let languageFilter = _.map(resultArr, function (o) {
+        if (o.language == value) return o;
+    });
+    languageFilter = _.without(languageFilter, undefined)
+
+    register(languageFilter);
+    showUi();
+}
+function countrySelect(value) {
+    blockUi();
+    if (value == "") return;
+    let countryFilter = _.map(resultArr, function (o) {
+        if (o.country == value) return o;
+    });
+    languageFilter = _.without(countryFilter, undefined)
+
+    register(languageFilter);
+    showUi();
+}
+function containsGenre(genres, value) {
+    if (genres.includes("|")) {
+        var gen = genres.split("|");
+        for (var ob in gen) {
+            if (value == gen[ob])
+                return true;
+        }
+    } else {
+        if (value == genres)
+            return true;
+    }
+    return false;
+}
+
+function register(arr) {
+    var printThis = "";
+    var genres = "";
+    var plot = "";
+
+    for (var i = 0; i < arr.length; i++) {
+        printThis += "<div class='row'>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].movie_title + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].director_name + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].actor_1_name + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].actor_2_name + "</div>";
+        if (arr[i].genres.includes("|")) {
+            var gen = arr[i].genres.split("|");
+            for (var ob in gen) {
+                genres += gen[ob] + " ";
+                genresSet.add(gen[ob]);
+            }
+        } else {
+            genres = arr[i].genres;
+            genresSet.add(arr[i].genres);
+        }
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + genres + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].language + "</div>";
+        languageSet.add(arr[i].language);
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].country + "</div>";
+        countrySet.add(arr[i].country);
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].content_rating + "</div>";
+
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].budget + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].title_year + "</div>";
+        titleYearSet.add(arr[i].title_year);
+
+        if (arr[i].plot_keywords.includes("|")) {
+            var plotArr = arr[i].plot_keywords.split("|");
+            for (var ob in plotArr) {
+                plot += plotArr[ob] + " ";
+            }
+        } else {
+            plot = arr[i].plot_keywords;
+        }
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + plot + "</div>";
+        printThis += "<div class='" + "col-1 grid-item'" + ">" + arr[i].movie_imdb_link + "</div>";
+        printThis += "</div>";
+    }
+    document.getElementById('ids').innerHTML = printThis;
+}
+
+function showUi() {
+    let loader = document.getElementById('loader');
+    loader.classList.remove("loader");
+}
+function blockUi() {
+    let loader = document.getElementById('loader');
+    loader.classList.add("loader");
+}
+</script>
+</html>
